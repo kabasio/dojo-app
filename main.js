@@ -38,10 +38,14 @@
             return button;
         };
 
-    // 空白スペースにボタンコンテナ・ボタンを設置
+        // ボタンを作る関数を実行
+        var clockInButton = createButton('clockInButton', '出勤');
+        var clockOutButton = createButton('clockOutButton', '退勤');
+
+        // 空白スペースにボタンコンテナ・ボタンを設置
         headerSpace.appendChild(buttonContainer);
-        buttonContainer.appendChild(createButton('clockInButton', '出勤'));
-        buttonContainer.appendChild(createButton('clockOutButton', '退勤'));
+        buttonContainer.appendChild(clockInButton);
+        buttonContainer.appendChild(clockOutButton);
 
     // ボタンコンテナ・各ボタンにCSSを適用
         buttonContainer.style.display = 'flex';
@@ -49,8 +53,8 @@
         buttonContainer.style.flexWrap = 'wrap';
         buttonContainer.style.justifyContent = 'center';
 
-        document.getElementById('clockInButton').style.backgroundColor = '#3dd28d';
-        document.getElementById('clockOutButton').style.backgroundColor = '#353866';
+        clockInButton.style.backgroundColor = '#3dd28d';
+        clockOutButton.style.backgroundColor = '#353866';
 
     // 時刻表示にCSSを適用
         hourContainer.style.textAlign = 'center';
@@ -108,8 +112,7 @@
                 errorMessage(err);
             });
         };
-        var inButton = document.getElementById('clockInButton');
-        inButton.addEventListener('click', clickClockInButton);
+        clockInButton.addEventListener('click', clickClockInButton);
 
     // 退勤ボタンが押されたときの処理
         var clickClockOutButton = function() {
@@ -145,7 +148,6 @@
                 errorMessage(err);
             });
         };
-        var outButton = document.getElementById('clockOutButton');
-        outButton.addEventListener('click', clickClockOutButton);
+        clockOutButton.addEventListener('click', clickClockOutButton);
     });
 })();
