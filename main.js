@@ -38,11 +38,12 @@
             return button;
         };
 
-        // ボタンを作る関数を実行
+    // ボタンを作る関数を実行
         var clockInButton = createButton('clockInButton', '出勤');
         var clockOutButton = createButton('clockOutButton', '退勤');
 
-        // 空白スペースにボタンコンテナ・ボタンを設置
+
+    // 空白スペースにボタンコンテナ・ボタンを設置
         headerSpace.appendChild(buttonContainer);
         buttonContainer.appendChild(clockInButton);
         buttonContainer.appendChild(clockOutButton);
@@ -66,14 +67,14 @@
         clock.style.fontFamily = 'monaco';
         clock.style.fontSize = '25px';
 
-    // リアルタイムで時刻を表示
+    // リアルタイムで時刻を表示する関数
         var showDate = function() {
             var nowTime = moment().format('HH:mm:ss');
             document.getElementById('clock').textContent = nowTime;
         };
-        setInterval(showDate, 1000);
+
     // GETリクエストで使用するパラメータ
-        var paramG = {
+        var getParam = {
             'app': event.appId,
             'query': '作成日時 = TODAY() and 作成者 in (LOGINUSER())',
             'totalCount': true
@@ -86,24 +87,21 @@
     // 出勤ボタンが押されたときの処理
         var clickClockInButton = function() {
         // レコード情報を取得
-            kintone.api(kintone.api.url('/k/v1/records', true), 'GET', paramG, function(getResp) {
+            kintone.api(kintone.api.url('/k/v1/records', true), 'GET', getParam, function(getResp) {
                 // 作成日時が当日のものがない場合、確認後レコードを新規で登録、 alertを出す
-                if (parseInt(getResp.totalCount, 10) === 0 && confirm('出勤時間を登録しますか')) {
-                    var paramP = {
-                        'app': event.appId,
-                        'record': {
-                            '休憩時間': {
-                                value: '60'
-                            }
-                        }
+                var recordNum = parseInt(getResp.totalCount, 10);
+                if (recordNum === 0 && confirm('出勤時間を登録しますか')) {
+                    var postParam = {
+                        'app': event.appId
                     };
-                    kintone.api(kintone.api.url('/k/v1/record', true), 'POST', paramP, function(postResp) {
+                    kintone.api(kintone.api.url('/k/v1/record', true), 'POST', postParam, function(postResp) {
                         alert('出勤時間を登録しました');
+                        location.reload(true);
                         return;
                     }, function(err) {
                         errorMessage(err);
                     });
-                } else if (parseInt(getResp.totalCount, 10) !== 0) {
+                } else if (recordNum !== 0) {
                     // 作成日時が当日のものがすでにある場合、alertを出す
                     alert('すでに登録済みです');
                     return;
@@ -112,17 +110,17 @@
                 errorMessage(err);
             });
         };
-        clockInButton.addEventListener('click', clickClockInButton);
 
     // 退勤ボタンが押されたときの処理
         var clickClockOutButton = function() {
         // レコード情報を取得
-            kintone.api(kintone.api.url('/k/v1/records', true), 'GET', paramG, function(getResp2) {
+            kintone.api(kintone.api.url('/k/v1/records', true), 'GET', getParam, function(getResp2) {
                 // 作成日時が当日のレコードがあった場合、確認後、退勤時間を現在時刻に更新し、alertを出す
-                if (parseInt(getResp2.totalCount, 10) === 1 &&
-                getResp2.records[0]['出勤時間'].value === getResp2.records[0]['退勤時間'].value &&
+                var recordNum = parseInt(getResp2.totalCount, 10);
+                if (recordNum === 1 &&
+                getResp2.records[0]['退勤時間'].value === null &&
                 confirm('退勤時間を登録しますか')) {
-                    var paramP = {
+                    var postParam = {
                         'app': event.appId,
                         'id': String(getResp2.records[0].$id.value),
                         'record': {
@@ -131,23 +129,35 @@
                             }
                         }
                     };
-                    kintone.api(kintone.api.url('/k/v1/record', true), 'PUT', paramP, function(putResp) {
+                    kintone.api(kintone.api.url('/k/v1/record', true), 'PUT', postParam, function(putResp) {
                         alert('退勤時間を登録しました');
+                        location.reload(true);
                         return;
                     }, function(err) {
                         errorMessage(err);
                     });
-                } else if (parseInt(getResp2.totalCount, 10) === 0) {
+                } else if (recordNum === 0) {
                     // 作成日時が当日のものがなかった場合、alertを出す
                     alert('出勤時間が登録されていません');
                     return;
-                } else if (getResp2.records[0]['出勤時間'].value !== getResp2.records[0]['退勤時間'].value) {
+                } else if (getResp2.records[0]['退勤時間'].value) {
+                    // 値が入っていたら、alrertを出す
                     alert('すでに登録済みです');
+                } else if (parseInt(getResp2.totalCount, 10) >= 2) {
+                    // 出勤レコードが2件以上あったら、alertを出す
+                    alert('出勤レコードが重複しています。不要なレコードを削除してください');
                 }
             }, function(err) {
                 errorMessage(err);
             });
         };
+
+    // 時刻表示の関数を実行
+        showDate();
+        setInterval(showDate, 1000);
+
+    // ボタンクリック時の関数を実行
+        clockInButton.addEventListener('click', clickClockInButton);
         clockOutButton.addEventListener('click', clickClockOutButton);
     });
 })();
